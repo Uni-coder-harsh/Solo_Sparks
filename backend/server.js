@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -21,6 +22,9 @@ mongoose.connect('mongodb://localhost:27017/solo_sparks', {
 app.get('/', (req, res) => {
   res.send('Solo Sparks Backend');
 });
+
+// Test Cloudinary Config (optional for now)
+console.log('Cloudinary Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME);
 
 // Start Server
 app.listen(PORT, () => {
