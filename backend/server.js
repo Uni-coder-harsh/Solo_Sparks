@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
+const questRoutes = require('./routes/quests');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,6 +14,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/quests', questRoutes);
 
 // MongoDB Connection
 mongoose.connect('mongodb://localhost:27017/solo_sparks', {
@@ -31,3 +33,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+app.use(cors({ origin: 'http://localhost:3000' }));

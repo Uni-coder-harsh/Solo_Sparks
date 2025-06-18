@@ -16,10 +16,11 @@ router.post('/register', async (req, res) => {
     await user.save();
 
     const payload = { userId: user._id };
-    const token = jwt.sign(payload, 'your_jwt_secret', { expiresIn: '1h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.json({ token });
   } catch (err) {
+    console.error('Register error:', err); // Debug
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -35,10 +36,11 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
 
     const payload = { userId: user._id };
-    const token = jwt.sign(payload, 'your_jwt_secret', { expiresIn: '1h' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.json({ token });
   } catch (err) {
+    console.error('Login error:', err); // Debug
     res.status(500).json({ msg: 'Server error' });
   }
 });
