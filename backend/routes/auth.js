@@ -4,6 +4,21 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const router = express.Router();
 
+// Middleware to verify JWT
+const auth = (req, res, next) => {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ msg: 'No token, authorization denied' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    console.error('Token error:', err);
+    res.status(401).json({ msg: 'Token is not valid' });
+  }
+};
+
 // Register
 router.post('/register', async (req, res) => {
   const { email, password } = req.body;
@@ -20,7 +35,7 @@ router.post('/register', async (req, res) => {
 
     res.json({ token });
   } catch (err) {
-    console.error('Register error:', err); // Debug
+    console.error('Register error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 });
@@ -40,7 +55,19 @@ router.post('/login', async (req, res) => {
 
     res.json({ token });
   } catch (err) {
-    console.error('Login error:', err); // Debug
+    console.error('Login error:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Get user profile
+router.get('/me', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('-password');
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    console.error('Profile error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 });
