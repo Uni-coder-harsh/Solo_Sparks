@@ -1,80 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+
+const rewardIcons = {
+  profile_boost: '/icons/boost.png',
+  exclusive_prompt: '/icons/prompt.png',
+  cosmic_theme: '/icons/cosmic.png',
+  badge: '/icons/badge.png',
+  // Add more as needed
+};
 
 const Rewards = () => {
   const [rewards, setRewards] = useState([]);
-  const [message, setMessage] = useState('');
-  const [userPoints, setUserPoints] = useState(0);
-
-  const fetchRewards = async () => {
-    try {
-      const res = await axios.get('http://localhost:5000/api/rewards');
-      setRewards(res.data);
-    } catch (err) {
-      setMessage(err.response?.data?.msg || 'Failed to load rewards');
-    }
-  };
-
-  const fetchUserPoints = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setMessage('Please log in to view points');
-      return;
-    }
-    try {
-      const res = await axios.get('http://localhost:5000/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUserPoints(res.data.sparkPoints);
-    } catch (err) {
-      setMessage('Failed to load user points');
-    }
-  };
-
-  const handleRedeem = async (rewardId, pointsCost) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setMessage('Please log in to redeem rewards');
-      return;
-    }
-    try {
-      const res = await axios.post(
-        `http://localhost:5000/api/rewards/redeem/${rewardId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMessage(res.data.msg);
-      setUserPoints(userPoints - pointsCost);
-    } catch (err) {
-      setMessage(err.response?.data?.msg || 'Failed to redeem reward');
-    }
-  };
 
   useEffect(() => {
+    const fetchRewards = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/rewards');
+        setRewards(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
     fetchRewards();
-    fetchUserPoints();
   }, []);
 
+  const redeemReward = async (id) => {
+    try {
+      await axios.post(`http://localhost:5000/api/rewards/redeem/${id}`, {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      alert('Reward redeemed!');
+    } catch (err) {
+      console.error(err.response?.data?.msg || 'Redemption failed');
+    }
+  };
+
   return (
-    <div className="card shadow-sm p-4 fade-in">
-      <h2 className="card-title text-center mb-4" style={{ color: 'var(--primary-color)' }}>Rewards Store</h2>
-      <p className="text-center mb-3">Your Spark Points: <strong>{userPoints}</strong></p>
-      {message && <div className="alert alert-info">{message}</div>}
-      <ul className="list-group rewards-list">
-        {rewards.map((reward) => (
-          <li key={reward._id} className="list-group-item reward-item d-flex justify-content-between align-items-center">
-            <div>
-              <strong>{reward.name}</strong>: {reward.description} ({reward.pointsCost} points)
-            </div>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => handleRedeem(reward._id, reward.pointsCost)}
-            >
-              Redeem
-            </button>
-          </li>
-        ))}
-      </ul>
+    <div className="container mx-auto p-6 bg-cosmic-gray/80 rounded-lg shadow-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {rewards.map(reward => (
+        <div key={reward._id} className="flex flex-col items-center bg-space-black rounded-xl p-6 shadow-lg">
+          <img src={rewardIcons[reward.type] || '/icons/default.png'} alt={reward.type} className="w-16 h-16 mb-2" />
+          <h3 className="text-xl font-semibold text-stellar-gold">{reward.name}</h3>
+          <p className="text-nebula-white">{reward.description}</p>
+          <p className="text-cosmic-gold">Cost: {reward.cost} Spark Points</p>
+          <button onClick={() => redeemReward(reward._id)} className="btn-celestial mt-2">Redeem</button>
+        </div>
+      ))}
     </div>
   );
 };

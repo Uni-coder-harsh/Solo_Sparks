@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const Reward = require('../models/Reward');
 const User = require('../models/User');
+const Quest = require('../models/Quest');
 
 const auth = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -16,29 +16,31 @@ const auth = (req, res, next) => {
   }
 };
 
-router.get('/', async (req, res) => {
+router.get('/mood-trend', auth, async (req, res) => {
   try {
-    const rewards = await Reward.find();
-    res.json(rewards);
+    const user = await User.findById(req.userId);
+    res.json([{ date: new Date(), moodScore: user.mood === 'Romantic' ? 0.8 : 0.5 }]); // Simplified example
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: 'Server error' });
   }
 });
 
-router.post('/redeem/:id', auth, async (req, res) => {
+// GET /api/analytics
+router.get('/', async (req, res) => {
   try {
-    const reward = await Reward.findById(req.params.id);
-    const user = await User.findById(req.userId);
-    if (user.sparkPoints >= reward.cost) {
-      user.sparkPoints -= reward.cost;
-      await user.save();
-      res.json({ msg: 'Reward redeemed' });
-    } else {
-      res.status(400).json({ msg: 'Not enough points' });
-    }
+    const totalUsers = await User.countDocuments();
+    const totalQuests = await Quest.countDocuments({ status: 'completed' });
+    const moods = await User.aggregate([
+      { $group: { _id: '$mood', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    res.json({
+      totalUsers,
+      totalQuests,
+      popularMood: moods[0]?._id || 'Neutral'
+    });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ msg: 'Server error' });
   }
 });

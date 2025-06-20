@@ -1,140 +1,138 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Quest = () => {
   const [quests, setQuests] = useState([]);
-  const [message, setMessage] = useState('');
-  const [reflection, setReflection] = useState({ questId: '', type: 'text', content: '', file: null });
-
-  const fetchQuests = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setMessage('Please log in to view quests');
-      return;
-    }
-    try {
-      const res = await axios.get('http://localhost:5000/api/quests', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setQuests(res.data);
-      setMessage('');
-    } catch (err) {
-      setMessage(err.response?.data?.msg || 'Error fetching quests');
-    }
-  };
-
-  const generateQuest = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setMessage('Please log in to generate quests');
-      return;
-    }
-    try {
-      const res = await axios.post('http://localhost:5000/api/quests/generate', {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setQuests([...quests, res.data]);
-      setMessage('New quest generated!');
-    } catch (err) {
-      setMessage(err.response?.data?.msg || 'Error generating quest');
-    }
-  };
-
-  const handleReflectionSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setMessage('Please log in to submit reflections');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('type', reflection.type);
-    if (reflection.type === 'text') {
-      if (!reflection.content) {
-        setMessage('Text content required');
-        return;
-      }
-      formData.append('content', reflection.content);
-    } else if (reflection.file) {
-      formData.append('file', reflection.file);
-    } else {
-      setMessage('File required for photo or audio');
-      return;
-    }
-
-    try {
-      const res = await axios.post(
-        `http://localhost:5000/api/reflections/${reflection.questId}`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setMessage('Reflection submitted!');
-      setQuests(quests.map((q) => (q._id === reflection.questId ? { ...q, completed: true } : q)));
-      setReflection({ questId: '', type: 'text', content: '', file: null });
-    } catch (err) {
-      setMessage(err.response?.data?.msg || 'Error submitting reflection');
-    }
-  };
+  const [selectedQuest, setSelectedQuest] = useState(null);
+  const [response, setResponse] = useState('');
+  const [sparkPoints, setSparkPoints] = useState(0);
+  const [rewards, setRewards] = useState([]);
+  const [error, setError] = useState(null);
+  const [analytics, setAnalytics] = useState({ completions: 0, growth: 0 });
+  const [file, setFile] = useState(null);
 
   useEffect(() => {
-    fetchQuests();
+    const fetchData = async () => {
+      try {
+        const [questsRes, profileRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/quests', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
+          axios.get('http://localhost:5000/api/auth/me', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+        ]);
+        setQuests(questsRes.data);
+        setSparkPoints(profileRes.data.sparkPoints || 0);
+        setRewards(profileRes.data.rewards || []);
+        setAnalytics(profileRes.data.analytics || { completions: 0, growth: 0 }); // Ensure defaults
+      } catch (err) {
+        setError(err.response?.data?.msg || 'Fetch failed');
+        console.error(err);
+      }
+    };
+    fetchData();
   }, []);
 
+  const generateQuest = async () => {
+    try {
+      const res = await axios.post('http://localhost:5000/api/quests/generate', {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setQuests([...quests, res.data]);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to generate quest');
+      console.error(err);
+    }
+  };
+
+  const completeQuest = async () => {
+    try {
+      if (!response.trim()) {
+        setError('Response is required');
+        return;
+      }
+      if (!selectedQuest || !selectedQuest._id) {
+        setError('Invalid quest selected');
+        return;
+      }
+      const formData = new FormData();
+      formData.append('response', response);
+      if (file) formData.append('photo', file); // or 'audio' if audio file
+      const res = await axios.post(
+        `http://localhost:5000/api/quests/complete/${selectedQuest._id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      setQuests(quests.filter(q => q._id !== selectedQuest._id));
+      setSelectedQuest(null);
+      setResponse('');
+      setSparkPoints(res.data.updatedPoints);
+      setRewards(res.data.rewards);
+      setAnalytics(prev => ({
+        completions: res.data.analytics?.completions || prev.completions,
+        growth: res.data.analytics?.growth || prev.growth
+      }));
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Failed to complete quest');
+      console.error(err);
+    }
+  };
+
+  const redeemReward = async (rewardId) => {
+    try {
+      const res = await axios.post(`http://localhost:5000/api/auth/redeem/${rewardId}`, {}, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      setSparkPoints(res.data.sparkPoints);
+      setRewards(res.data.rewards);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Redemption failed');
+      console.error(err);
+    }
+  };
+
   return (
-    <div className="card shadow-sm p-4 fade-in">
-      <h2 className="card-title text-center mb-4" style={{ color: 'var(--primary-color)' }}>Your Quests</h2>
-      <button className="btn btn-primary mb-3 w-100" onClick={generateQuest}>
-        Generate New Quest
-      </button>
-      {message && <div className="alert alert-info">{message}</div>}
-      <ul className="list-group quest-list">
-        {quests.map((quest) => (
-          <li key={quest._id} className="list-group-item quest-item">
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <strong>{quest.title}</strong>: {quest.description}
-                <span className="ms-2">({quest.points} points)</span>
-              </div>
-              {quest.completed && <span className="badge bg-success">Completed</span>}
-            </div>
-            {!quest.completed && (
-              <form onSubmit={handleReflectionSubmit} className="mt-3">
-                <div className="mb-2">
-                  <select
-                    className="form-select"
-                    value={reflection.type}
-                    onChange={(e) => setReflection({ ...reflection, type: e.target.value, questId: quest._id })}
-                  >
-                    <option value="text">Text</option>
-                    <option value="photo">Photo</option>
-                    <option value="audio">Audio</option>
-                  </select>
-                </div>
-                {reflection.type === 'text' ? (
-                  <input
-                    type="text"
-                    className="form-control mb-2"
-                    placeholder="Enter your reflection"
-                    value={reflection.questId === quest._id ? reflection.content : ''}
-                    onChange={(e) => setReflection({ ...reflection, content: e.target.value, questId: quest._id })}
-                  />
-                ) : (
-                  <input
-                    type="file"
-                    className="form-control mb-2"
-                    accept={reflection.type === 'photo' ? 'image/*' : 'audio/*'}
-                    onChange={(e) => setReflection({ ...reflection, file: e.target.files[0], questId: quest._id })}
-                  />
-                )}
-                <button type="submit" className="btn btn-primary">
-                  Submit Reflection
-                </button>
-              </form>
-            )}
-          </li>
+    <div className="min-h-screen bg-gradient-to-b from-cosmic-black via-space-purple to-midnight-blue text-nebula-white p-6">
+      <h2 className="text-4xl font-celestial mb-6 text-stellar-gold">Celestial Quests</h2>
+      <p className="mb-4"><span className="font-orbitron">Spark Points:</span> {sparkPoints}</p>
+      <p className="mb-4"><span className="font-orbitron">Completions:</span> {analytics.completions}</p>
+      <p className="mb-4"><span className="font-orbitron">Growth:</span> {analytics.growth}%</p>
+      {error && <p className="text-red-400 mt-2">{error}</p>}
+      <button onClick={generateQuest} className="bg-stellar-gold hover:bg-cosmic-gold text-cosmic-black font-bold py-2 px-6 rounded-lg mb-4">Generate Quest</button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {quests.map(quest => (
+          <div key={quest._id} className="bg-cosmic-gray/70 p-4 rounded-lg shadow-lg">
+            <h3 className="text-xl font-orbitron text-nebula-white">{quest.title}</h3>
+            <p className="text-nebula-white">{quest.description}</p>
+            <p><span className="font-orbitron text-nebula-white">Points:</span> {quest.points}</p>
+            <button onClick={() => setSelectedQuest(quest)} className="mt-2 bg-green-700 hover:bg-green-900 text-nebula-white py-1 px-3 rounded">Complete</button>
+          </div>
         ))}
-      </ul>
+      </div>
+      {selectedQuest && (
+        <div className="mt-4 p-4 bg-cosmic-gray/70 rounded-lg shadow-lg">
+          <h3 className="text-xl font-orbitron text-nebula-white">{selectedQuest.title}</h3>
+          <textarea value={response} onChange={(e) => setResponse(e.target.value)} className="w-full p-2 bg-space-black border border-stellar-gold rounded-lg text-nebula-white mt-2" placeholder="Enter your reflection..." />
+          <input
+            type="file"
+            accept="image/*,audio/*"
+            className="mt-2 block"
+            onChange={e => setFile(e.target.files[0])}
+          />
+          <button onClick={completeQuest} className="mt-2 bg-stellar-gold hover:bg-cosmic-gold text-cosmic-black font-bold py-2 px-6 rounded-lg">Submit to Cosmos</button>
+        </div>
+      )}
+      <div className="mt-4">
+        <h3 className="font-orbitron text-xl text-nebula-white">Rewards</h3>
+        {rewards.length > 0 ? rewards.map(r => (
+          <button key={r} onClick={() => redeemReward(r)} className="mt-2 bg-cosmic-purple hover:bg-space-purple text-nebula-white py-1 px-3 rounded-lg">Redeem {r}</button>
+        )) : <p className="text-gray-500">No rewards available</p>}
+      </div>
     </div>
   );
 };

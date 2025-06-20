@@ -1,58 +1,42 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [message, setMessage] = useState('');
 
-  const { email, password } = formData;
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const onChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const onSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
       localStorage.setItem('token', res.data.token);
-      setMessage('Login successful!');
-      window.location.reload();
+      window.location.href = '/profile';
     } catch (err) {
-      setMessage(err.response?.data?.msg || 'Error logging in');
+      console.error(err.response?.data?.msg || 'Login failed');
     }
   };
 
   return (
-    <div className="card shadow-sm p-4 fade-in">
-      <h3 className="card-title text-center mb-4" style={{ color: 'var(--primary-color)' }}>Sign In</h3>
-      <form onSubmit={onSubmit}>
-        <div className="mb-3">
-          <label className="form-label">Email</label>
-          <input
-            type="email"
-            className="form-control"
-            name="email"
-            value={email}
-            onChange={onChange}
-            placeholder="Enter your email"
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label className="form-label">Password</label>
-          <input
-            type="password"
-            className="form-control"
-            name="password"
-            value={password}
-            onChange={onChange}
-            placeholder="Enter your password"
-            required
-          />
-        </div>
-        <button type="submit" className="btn btn-primary w-100">
-          Login
-        </button>
-        {message && <div className="alert alert-info mt-3">{message}</div>}
+    <div className="container mx-auto p-6 bg-cosmic-gray/80 rounded-lg shadow-xl text-white">
+      <h2 className="text-3xl font-bold mb-4 text-cosmic-blue">Login</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg"
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg"
+        />
+        <button type="submit" className="bg-cosmic-blue hover:bg-cosmic-purple text-white font-bold py-2 px-6 rounded-lg">Login</button>
       </form>
     </div>
   );
