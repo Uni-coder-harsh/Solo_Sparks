@@ -1,37 +1,50 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const backendUrl = process.env.REACT_APP_API_URL;
 
 const Analytics = () => {
-  const [data, setData] = useState(null);
+  const [trendingQuests, setTrendingQuests] = useState([]);
+  const [trendingRewards, setTrendingRewards] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    let interval;
-    const fetchAnalytics = async () => {
+    const fetchTrends = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/api/analytics`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        setData(res.data);
+        const [questsRes, rewardsRes] = await Promise.all([
+          axios.get(`${backendUrl}/api/analytics/trending-quests`),
+          axios.get(`${backendUrl}/api/analytics/trending-rewards`)
+        ]);
+        setTrendingQuests(questsRes.data);
+        setTrendingRewards(rewardsRes.data);
+        setError('');
       } catch (err) {
-        setData(null);
+        setError('Failed to load trends');
       }
     };
-    fetchAnalytics();
-    interval = setInterval(fetchAnalytics, 10000); // Poll every 10s
-    return () => clearInterval(interval);
+    fetchTrends();
   }, []);
 
-  if (!data) return <div className="text-nebula-white">Loading analytics...</div>;
-
   return (
-    <div className="max-w-2xl mx-auto p-8 bg-cosmic-gray/80 rounded-xl shadow-2xl">
-      <h2 className="text-3xl font-celestial text-celestial-glow mb-4">Cosmic Trends</h2>
-      <p className="text-nebula-white mb-2">Total Users: <span className="font-bold">{data.totalUsers}</span></p>
-      <p className="text-nebula-white mb-2">Total Quests Completed: <span className="font-bold">{data.totalQuests}</span></p>
-      <p className="text-nebula-white mb-2">Most Popular Mood: <span className="font-bold">{data.popularMood}</span></p>
-      {/* Add more analytics as needed */}
+    <div className="p-6">
+      <h2 className="text-3xl font-bold mb-4 text-cosmic-blue">Trends</h2>
+      {error && <div className="text-red-400 mb-2">{error}</div>}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold text-stellar-gold">Most Completed Quests</h3>
+        <ul>
+          {trendingQuests.map(q => (
+            <li key={q._id}>{q._id} ({q.count} completions)</li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <h3 className="text-xl font-semibold text-stellar-gold">Trending Rewards</h3>
+        <ul>
+          {trendingRewards.map(r => (
+            <li key={r._id}>{r._id} ({r.count} redeemed)</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

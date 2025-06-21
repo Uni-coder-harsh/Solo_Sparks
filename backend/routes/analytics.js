@@ -45,4 +45,34 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Trending Quests: Most completed quests by title
+router.get('/trending-quests', async (req, res) => {
+  try {
+    const trending = await Quest.aggregate([
+      { $match: { status: 'completed' } },
+      { $group: { _id: '$title', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 }
+    ]);
+    res.json(trending);
+  } catch (err) {
+    res.status(500).json({ msg: 'Failed to fetch trending quests' });
+  }
+});
+
+// Trending Rewards: Most redeemed rewards by name
+router.get('/trending-rewards', async (req, res) => {
+  try {
+    const trending = await User.aggregate([
+      { $unwind: '$rewards' },
+      { $group: { _id: '$rewards', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 }
+    ]);
+    res.json(trending);
+  } catch (err) {
+    res.status(500).json({ msg: 'Failed to fetch trending rewards' });
+  }
+});
+
 module.exports = router;

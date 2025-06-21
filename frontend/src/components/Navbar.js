@@ -17,8 +17,8 @@ const Navbar = () => {
         {isLoggedIn ? (
           <>
             <Link to="/quests" className="text-nebula-white hover:text-stellar-gold">Quests</Link>
-            <Link to="/rewards-list" className="text-nebula-white hover:text-stellar-gold">Rewards</Link>
-            <Link to="/analytics" className="text-nebula-white hover:text-stellar-gold">Analytics</Link>
+            <Link to="/rewards-store" className="text-nebula-white hover:text-stellar-gold">Reward Store</Link>
+            <Link to="/analytics" className="text-nebula-white hover:text-stellar-gold">Trends</Link>
             <Link to="/profile" className="text-nebula-white hover:text-stellar-gold">Profile</Link>
             <button onClick={handleLogout} className="text-nebula-white hover:text-red-400">Logout</button>
           </>
