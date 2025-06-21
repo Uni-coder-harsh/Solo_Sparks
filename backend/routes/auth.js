@@ -1,71 +1,78 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const User = require('../models/User');
 
-const backendUrl = process.env.REACT_APP_API_URL;
-
+// Password validation helper
 function validatePassword(password) {
   // At least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
-  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return regex.test(password);
 }
 
-const Register = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    mood: '',
-    personality: { loveType: '', openness: 0.5, extraversion: 0.5 },
-    emotionalNeeds: []
-  });
-  const [error, setError] = useState('');
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name.startsWith('personality.')) {
-      const field = name.split('.')[1];
-      setFormData({ ...formData, personality: { ...formData.personality, [field]: value } });
-    } else {
-      setFormData({ ...formData, [name]: value });
+// Register
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password, mood, personality, emotionalNeeds } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ msg: 'Name, email, and password are required.' });
     }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!validatePassword(formData.password)) {
-      setError('Password must be at least 8 characters, include uppercase, lowercase, number, and special character.');
-      return;
+    if (!validatePassword(password)) {
+      return res.status(400).json({
+        msg: 'Password must be at least 8 characters, include uppercase, lowercase, number, and special character.'
+      });
     }
-    try {
-      const res = await axios.post(`${backendUrl}/api/auth/register`, formData);
-      localStorage.setItem('token', res.data.token);
-      window.location.href = '/profile';
-    } catch (err) {
-      setError(err.response?.data?.msg || 'Registration failed');
-    }
-  };
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ msg: 'User already exists.' });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      mood: mood || 'Neutral',
+      personality: personality || {},
+      emotionalNeeds: emotionalNeeds || []
+    });
+    await user.save();
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+    res.json({ token });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ msg: 'Server error. Please try again later.' });
+  }
+});
 
-  return (
-    <div className="container mx-auto p-6 bg-cosmic-gray/80 rounded-lg shadow-xl">
-      <h2 className="text-3xl font-bold mb-4 text-cosmic-blue">Register</h2>
-      {error && <div className="text-red-400 mb-2">{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <input name="name" placeholder="Name" value={formData.name} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg" />
-        <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg" />
-        <input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg" minLength={8} maxLength={32} />
-        <select name="mood" value={formData.mood} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg">
-          <option value="">Select Mood</option>
-          {['Romantic', 'Dreamy', 'Hopeful', 'Neutral'].map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-        <input name="personality.loveType" placeholder="Love Type" value={formData.personality.loveType} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg" />
-        <button type="submit" className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Register</button>
-      </form>
-      <p className="mt-4 text-nebula-white">
-        Already have an account? <Link to="/login" className="text-stellar-gold underline">Login here</Link>
-      </p>
-    </div>
-  );
-};
+// Login
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ msg: 'Email and password are required.' });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ msg: 'User not found.' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ msg: 'Incorrect password.' });
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+    res.json({ token });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ msg: 'Server error. Please try again later.' });
+  }
+});
 
-export default Register;
+// Example protected route (optional)
+router.get('/me', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ msg: 'No token, authorization denied.' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+    if (!user) return res.status(404).json({ msg: 'User not found.' });
+    res.json(user);
+  } catch (err) {
+    res.status(401).json({ msg: 'Token is not valid.' });
+  }
+});
+
+module.exports = router;
