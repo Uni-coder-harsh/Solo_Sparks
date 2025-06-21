@@ -46,5 +46,9 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/rewards', rewardsRoutes);
 app.use('/uploads', express.static('uploads'));
 
+app.get('/ping', (req, res) => {
+  res.send('pong');
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
