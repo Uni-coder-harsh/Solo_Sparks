@@ -3,11 +3,26 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); // Or use your Cloudinary storage
 
 // Password validation helper
 function validatePassword(password) {
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return regex.test(password);
+}
+
+// Middleware to authenticate user
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ msg: 'No token, authorization denied.' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch {
+    res.status(401).json({ msg: 'Token is not valid.' });
+  }
 }
 
 // Register
@@ -60,17 +75,33 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Get current user
-router.get('/me', async (req, res) => {
+// GET current user
+router.get('/me', authMiddleware, async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) return res.status(401).json({ msg: 'No token, authorization denied.' });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(req.userId).select('-password');
     if (!user) return res.status(404).json({ msg: 'User not found.' });
     res.json(user);
   } catch (err) {
-    res.status(401).json({ msg: 'Token is not valid.' });
+    res.status(500).json({ msg: 'Server error.' });
+  }
+});
+
+// PUT update profile (with optional avatar upload)
+router.put('/me', authMiddleware, upload.single('reflectionPhoto'), async (req, res) => {
+  try {
+    const update = {
+      name: req.body.name,
+      mood: req.body.mood,
+      emotionalNeeds: req.body.emotionalNeeds?.split(',').map(s => s.trim())
+    };
+    if (req.file) {
+      update.avatar = `/uploads/${req.file.filename}`;
+    }
+    const user = await User.findByIdAndUpdate(req.userId, update, { new: true }).select('-password');
+    if (!user) return res.status(404).json({ msg: 'User not found.' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ msg: 'Server error.' });
   }
 });
 
