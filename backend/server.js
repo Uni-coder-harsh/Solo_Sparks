@@ -13,7 +13,10 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const app = express();
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000', // for local development
+    'https://solo-sparks-xkwc.onrender.com' // your deployed frontend
+  ],
   methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));

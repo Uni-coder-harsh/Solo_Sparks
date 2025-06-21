@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
 
@@ -9,7 +11,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
+      const res = await axios.post(`${backendUrl}/api/auth/login`, formData);
       localStorage.setItem('token', res.data.token);
       window.location.href = '/profile';
     } catch (err) {
