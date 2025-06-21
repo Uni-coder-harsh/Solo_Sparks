@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const MoodInput = () => {
   const [mood, setMood] = useState('');
   const [needs, setNeeds] = useState('');
 
   const updateMood = async () => {
     try {
-      await axios.put('http://localhost:5000/api/auth/me', { mood, emotionalNeeds: needs.split(',') }, {
+      await axios.put(`${backendUrl}/api/auth/me`, { mood, emotionalNeeds: needs.split(',') }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
     } catch (err) {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
 const moods = ['Romantic', 'Dreamy', 'Hopeful', 'Neutral', 'Sad', 'Stressed'];
-const backendUrl = "http://localhost:5000";
+const backendUrl = process.env.REACT_APP_API_URL;
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -14,7 +14,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/auth/me', {
+        const res = await axios.get(`${backendUrl}/api/auth/me`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         setUser(res.data);
@@ -38,7 +38,7 @@ const Profile = () => {
     const formData = new FormData();
     formData.append('reflectionPhoto', file);
     try {
-      const res = await axios.put('http://localhost:5000/api/auth/me', formData, {
+      const res = await axios.put(`${backendUrl}/api/auth/me`, formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'multipart/form-data'
@@ -59,7 +59,7 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
-      await axios.put('http://localhost:5000/api/auth/me', {
+      await axios.put(`${backendUrl}/api/auth/me`, {
         name: form.name,
         mood: form.mood,
         emotionalNeeds: form.emotionalNeeds // just a string, backend will parse

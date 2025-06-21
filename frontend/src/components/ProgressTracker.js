@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const ProgressTracker = () => {
   const [growth, setGrowth] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/auth/me', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+        const res = await axios.get(`${backendUrl}/api/auth/me`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
         setGrowth(res.data.analytics?.growth || 0);
       } catch (err) {
         console.error(err);

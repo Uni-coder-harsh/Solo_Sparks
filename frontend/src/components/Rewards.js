@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const rewardIcons = {
   profile_boost: '/icons/boost.png',
   exclusive_prompt: '/icons/prompt.png',
@@ -15,7 +17,7 @@ const Rewards = () => {
   useEffect(() => {
     const fetchRewards = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/rewards');
+        const res = await axios.get(`${backendUrl}/api/rewards`);
         setRewards(res.data);
       } catch (err) {
         console.error(err);
@@ -26,7 +28,7 @@ const Rewards = () => {
 
   const redeemReward = async (id) => {
     try {
-      await axios.post(`http://localhost:5000/api/rewards/redeem/${id}`, {}, {
+      await axios.post(`${backendUrl}/api/rewards/redeem/${id}`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       alert('Reward redeemed!');

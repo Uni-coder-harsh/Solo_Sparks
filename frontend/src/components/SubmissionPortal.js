@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const SubmissionPortal = () => {
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -13,7 +15,7 @@ const SubmissionPortal = () => {
     if (audio) formData.append('audio', audio);
 
     try {
-      await axios.post('http://localhost:5000/api/submissions', formData, {
+      await axios.post(`${backendUrl}/api/submissions`, formData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' }
       });
     } catch (err) {

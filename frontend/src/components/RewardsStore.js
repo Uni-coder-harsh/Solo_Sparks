@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const RewardsStore = () => {
   const [rewards, setRewards] = useState([]);
   const [points, setPoints] = useState(0);
@@ -8,7 +10,7 @@ const RewardsStore = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/auth/me', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+        const res = await axios.get(`${backendUrl}/api/auth/me`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
         setPoints(res.data.sparkPoints || 0);
         setRewards(['Profile Boost (50)', 'Exclusive Prompt (100)']);
       } catch (err) {
@@ -22,7 +24,7 @@ const RewardsStore = () => {
     const cost = parseInt(reward.split('(')[1]);
     if (points >= cost) {
       try {
-        await axios.post(`http://localhost:5000/api/auth/redeem/${reward.split(' ')[0]}`, {}, {
+        await axios.post(`${backendUrl}/api/auth/redeem/${reward.split(' ')[0]}`, {}, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
       } catch (err) {

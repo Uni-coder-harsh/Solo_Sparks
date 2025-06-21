@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const QuestDisplay = () => {
   const [quests, setQuests] = useState([]);
 
   useEffect(() => {
     const fetchQuests = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/quests', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+        const res = await axios.get(`${backendUrl}/api/quests`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
         setQuests(res.data);
       } catch (err) {
         console.error(err);

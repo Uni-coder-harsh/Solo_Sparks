@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const Quest = () => {
   const [quests, setQuests] = useState([]);
   const [selectedQuest, setSelectedQuest] = useState(null);
@@ -15,8 +17,8 @@ const Quest = () => {
     const fetchData = async () => {
       try {
         const [questsRes, profileRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/quests', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
-          axios.get('http://localhost:5000/api/auth/me', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+          axios.get(`${backendUrl}/api/quests`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
+          axios.get(`${backendUrl}/api/auth/me`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
         ]);
         setQuests(questsRes.data);
         setSparkPoints(profileRes.data.sparkPoints || 0);
@@ -32,7 +34,7 @@ const Quest = () => {
 
   const generateQuest = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/api/quests/generate', {}, {
+      const res = await axios.post(`${backendUrl}/api/quests/generate`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setQuests([...quests, res.data]);
@@ -57,7 +59,7 @@ const Quest = () => {
       formData.append('response', response);
       if (file) formData.append('photo', file); // or 'audio' if audio file
       const res = await axios.post(
-        `http://localhost:5000/api/quests/complete/${selectedQuest._id}`,
+        `${backendUrl}/api/quests/complete/${selectedQuest._id}`,
         formData,
         {
           headers: {
@@ -84,7 +86,7 @@ const Quest = () => {
 
   const redeemReward = async (rewardId) => {
     try {
-      const res = await axios.post(`http://localhost:5000/api/auth/redeem/${rewardId}`, {}, {
+      const res = await axios.post(`${backendUrl}/api/auth/redeem/${rewardId}`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setSparkPoints(res.data.sparkPoints);

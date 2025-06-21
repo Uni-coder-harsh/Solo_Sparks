@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState({ personality: {}, mood: '', emotionalNeeds: [] });
@@ -10,7 +12,7 @@ const Onboarding = () => {
 
   const submitProfile = async () => {
     try {
-      await axios.post('http://localhost:5000/api/auth/onboard', profile, {
+      await axios.post(`${backendUrl}/api/auth/onboard`, profile, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
     } catch (err) {

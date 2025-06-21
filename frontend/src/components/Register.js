@@ -2,6 +2,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -22,9 +24,10 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', formData);
+      const res = await axios.post(`${backendUrl}/api/auth/register`, formData);
       localStorage.setItem('token', res.data.token);
       window.location.href = '/profile';
     } catch (err) {

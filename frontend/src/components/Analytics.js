@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const backendUrl = process.env.REACT_APP_API_URL;
+
 const Analytics = () => {
   const [data, setData] = useState(null);
 
@@ -8,7 +10,7 @@ const Analytics = () => {
     let interval;
     const fetchAnalytics = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/analytics', {
+        const res = await axios.get(`${backendUrl}/api/analytics`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         setData(res.data);
