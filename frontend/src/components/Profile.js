@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 const moods = ['Romantic', 'Dreamy', 'Hopeful', 'Neutral', 'Sad', 'Stressed'];
@@ -47,7 +48,7 @@ const Profile = () => {
         }
       });
       setUser(res.data);
-      setAvatarPreview(res.data.avatar || '/default-avatar.png'); // Use backend URL
+      setAvatarPreview(res.data.avatar || '/default-avatar.png');
       setError('');
     } catch (err) {
       setError(err.response?.data?.msg || 'Failed to upload avatar');
@@ -146,9 +147,9 @@ const Profile = () => {
         </>
       )}
       <div className="flex flex-wrap gap-4 mt-6">
-        <a href="/quests" className="btn-celestial">Complete a Quest</a>
-        <a href="/rewards-store" className="btn-celestial">Claim Rewards</a>
-        <a href="/analytics" className="btn-celestial">See Trends</a>
+        <Link to="/quests" className="btn-celestial">Complete a Quest</Link>
+        <Link to="/rewards-store" className="btn-celestial">Claim Rewards</Link>
+        <Link to="/analytics" className="btn-celestial">See Trends</Link>
       </div>
     </div>
   );
