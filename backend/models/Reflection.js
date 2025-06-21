@@ -7,4 +7,4 @@ const reflectionSchema = new mongoose.Schema({
   content: { type: String, required: true }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Reflection', reflectionSchema);
+module.exports = mongoose.model('Reflection', reflectionSchema, 'reflections');

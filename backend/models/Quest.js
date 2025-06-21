@@ -1,6 +1,3 @@
-
-const mongoose = require('mongoose');
-
 const questSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title: { type: String, required: true },
@@ -13,4 +10,7 @@ const questSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Quest', questSchema);
+module.exports = {
+  User: mongoose.model('User', userSchema, 'users'),
+  Quest: mongoose.model('Quest', questSchema, 'quests')
+};

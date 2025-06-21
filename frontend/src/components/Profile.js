@@ -147,7 +147,7 @@ const Profile = () => {
       )}
       <div className="flex flex-wrap gap-4 mt-6">
         <a href="/quests" className="btn-celestial">Complete a Quest</a>
-        <a href="/rewards-list" className="btn-celestial">Claim Rewards</a>
+        <a href="/rewards-store" className="btn-celestial">Claim Rewards</a>
         <a href="/analytics" className="btn-celestial">See Trends</a>
       </div>
     </div>

@@ -7,4 +7,4 @@ const rewardStoreSchema = new mongoose.Schema({
   imageUrl: String // Optional
 });
 
-module.exports = mongoose.model('RewardStore', rewardStoreSchema);
+module.exports = mongoose.model('RewardStore', rewardStoreSchema, 'rewardstores');
