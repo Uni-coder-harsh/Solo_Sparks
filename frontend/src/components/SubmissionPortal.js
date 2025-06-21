@@ -1,37 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const backendUrl = process.env.REACT_APP_API_URL;
 
-const SubmissionPortal = () => {
-  const [text, setText] = useState('');
-  const [photo, setPhoto] = useState(null);
-  const [audio, setAudio] = useState(null);
+const Analytics = () => {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState('');
 
-  const submit = async () => {
-    const formData = new FormData();
-    formData.append('text', text);
-    if (photo) formData.append('photo', photo);
-    if (audio) formData.append('audio', audio);
-
-    try {
-      await axios.post(`${backendUrl}/api/submissions`, formData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}`, 'Content-Type': 'multipart/form-data' }
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  useEffect(() => {
+    let interval;
+    const fetchAnalytics = async () => {
+      try {
+        const res = await axios.get(`${backendUrl}/api/analytics`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setData(res.data);
+        setError('');
+      } catch (err) {
+        setError(err.response?.data?.msg || 'Failed to load analytics');
+      }
+    };
+    fetchAnalytics();
+    interval = setInterval(fetchAnalytics, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="bg-cosmic-black text-nebula-white p-6">
-      <h2 className="text-3xl font-celestial text-stellar-gold">Submit Reflection</h2>
-      <textarea value={text} onChange={e => setText(e.target.value)} className="bg-space-black p-2 mt-2 w-full text-nebula-white" />
-      <input type="file" accept="image/*" onChange={e => setPhoto(e.target.files[0])} className="bg-space-black p-2 mt-2 w-full" />
-      <input type="file" accept="audio/*" onChange={e => setAudio(e.target.files[0])} className="bg-space-black p-2 mt-2 w-full" />
-      <button onClick={submit} className="bg-stellar-gold text-cosmic-black p-2 mt-2">Submit</button>
+      <h2 className="text-3xl font-celestial text-stellar-gold">Cosmic Analytics</h2>
+      {error && <div className="text-red-400 mb-2">{error}</div>}
+      {data ? (
+        <div>
+          <p>Total Users: {data.totalUsers}</p>
+          <p>Total Completed Quests: {data.totalQuests}</p>
+          <p>Most Popular Mood: {data.popularMood}</p>
+        </div>
+      ) : (
+        !error && <div>Loading...</div>
+      )}
     </div>
   );
 };
 
-export default SubmissionPortal;
+export default Analytics;

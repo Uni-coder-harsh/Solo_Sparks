@@ -13,14 +13,16 @@ const rewardIcons = {
 
 const Rewards = () => {
   const [rewards, setRewards] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchRewards = async () => {
       try {
         const res = await axios.get(`${backendUrl}/api/rewards`);
         setRewards(res.data);
+        setError('');
       } catch (err) {
-        console.error(err);
+        setError(err.response?.data?.msg || 'Failed to load rewards');
       }
     };
     fetchRewards();
@@ -32,13 +34,15 @@ const Rewards = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       alert('Reward redeemed!');
+      setError('');
     } catch (err) {
-      console.error(err.response?.data?.msg || 'Redemption failed');
+      setError(err.response?.data?.msg || 'Redemption failed');
     }
   };
 
   return (
     <div className="container mx-auto p-6 bg-cosmic-gray/80 rounded-lg shadow-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {error && <div className="text-red-400 mb-2">{error}</div>}
       {rewards.map(reward => (
         <div key={reward._id} className="flex flex-col items-center bg-space-black rounded-xl p-6 shadow-lg">
           <img src={rewardIcons[reward.type] || '/icons/default.png'} alt={reward.type} className="w-16 h-16 mb-2" />

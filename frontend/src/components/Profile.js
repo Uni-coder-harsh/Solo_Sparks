@@ -9,6 +9,7 @@ const Profile = () => {
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({});
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [error, setError] = useState('');
   const fileInputRef = useRef();
 
   useEffect(() => {
@@ -25,6 +26,7 @@ const Profile = () => {
         });
         setAvatarPreview(res.data.avatar || '/default-avatar.png');
       } catch (err) {
+        setError(err.response?.data?.msg || 'Failed to load profile');
         setUser(null);
       }
     };
@@ -46,8 +48,9 @@ const Profile = () => {
       });
       setUser(res.data);
       setAvatarPreview(res.data.avatar || '/default-avatar.png');
+      setError('');
     } catch (err) {
-      alert('Failed to upload avatar');
+      setError(err.response?.data?.msg || 'Failed to upload avatar');
     }
   };
 
@@ -62,21 +65,23 @@ const Profile = () => {
       await axios.put(`${backendUrl}/api/auth/me`, {
         name: form.name,
         mood: form.mood,
-        emotionalNeeds: form.emotionalNeeds // just a string, backend will parse
+        emotionalNeeds: form.emotionalNeeds
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setEditMode(false);
+      setError('');
       window.location.reload();
     } catch (err) {
-      alert('Failed to update profile');
+      setError(err.response?.data?.msg || 'Failed to update profile');
     }
   };
 
-  if (!user) return <div className="text-nebula-white">Loading...</div>;
+  if (!user) return <div className="text-nebula-white">{error || 'Loading...'}</div>;
 
   return (
     <div className="max-w-2xl w-full mx-auto mt-10 p-8 bg-cosmic-gray/80 rounded-xl shadow-2xl flex flex-col items-center overflow-hidden">
+      {error && <div className="text-red-400 mb-2">{error}</div>}
       <div className="relative mb-4">
         <img
           src={

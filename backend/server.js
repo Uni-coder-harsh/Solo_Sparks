@@ -4,6 +4,7 @@ const authRoutes = require('./routes/auth');
 const questRoutes = require('./routes/quests');
 const analyticsRoutes = require('./routes/analytics');
 const rewardsRoutes = require('./routes/rewards');
+const rewardStoreRoutes = require('./routes/rewardstore');
 require('dotenv').config();
 const cors = require('cors');
 const cloudinary = require('cloudinary').v2;
@@ -44,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/quests', questRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/rewards', rewardsRoutes);
+app.use('/api/rewardstore', rewardStoreRoutes);
 app.use('/uploads', express.static('uploads'));
 
 app.get('/ping', (req, res) => {

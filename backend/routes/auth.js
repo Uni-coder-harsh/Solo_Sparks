@@ -1,152 +1,71 @@
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
-const multer = require('multer');
-const upload = multer({ dest: './uploads/' });
+import { useState } from 'react';
+import axios from 'axios';
+import { Link } from 'react-router-dom';
 
-const auth = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ msg: 'No token provided' });
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.userId;
-    next();
-  } catch (err) {
-    res.status(401).json({ msg: 'Invalid token' });
-  }
+const backendUrl = process.env.REACT_APP_API_URL;
+
+function validatePassword(password) {
+  // At least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+}
+
+const Register = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    mood: '',
+    personality: { loveType: '', openness: 0.5, extraversion: 0.5 },
+    emotionalNeeds: []
+  });
+  const [error, setError] = useState('');
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name.startsWith('personality.')) {
+      const field = name.split('.')[1];
+      setFormData({ ...formData, personality: { ...formData.personality, [field]: value } });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!validatePassword(formData.password)) {
+      setError('Password must be at least 8 characters, include uppercase, lowercase, number, and special character.');
+      return;
+    }
+    try {
+      const res = await axios.post(`${backendUrl}/api/auth/register`, formData);
+      localStorage.setItem('token', res.data.token);
+      window.location.href = '/profile';
+    } catch (err) {
+      setError(err.response?.data?.msg || 'Registration failed');
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-6 bg-cosmic-gray/80 rounded-lg shadow-xl">
+      <h2 className="text-3xl font-bold mb-4 text-cosmic-blue">Register</h2>
+      {error && <div className="text-red-400 mb-2">{error}</div>}
+      <form onSubmit={handleSubmit}>
+        <input name="name" placeholder="Name" value={formData.name} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg" />
+        <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg" />
+        <input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg" minLength={8} maxLength={32} />
+        <select name="mood" value={formData.mood} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg">
+          <option value="">Select Mood</option>
+          {['Romantic', 'Dreamy', 'Hopeful', 'Neutral'].map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <input name="personality.loveType" placeholder="Love Type" value={formData.personality.loveType} onChange={handleChange} className="w-full p-3 mb-4 bg-gray-800 border border-gray-700 rounded-lg" />
+        <button type="submit" className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">Register</button>
+      </form>
+      <p className="mt-4 text-nebula-white">
+        Already have an account? <Link to="/login" className="text-stellar-gold underline">Login here</Link>
+      </p>
+    </div>
+  );
 };
 
-router.post('/register', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ msg: 'User already exists' });
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const user = new User({ name, email, password: hashedPassword });
-    await user.save();
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ msg: 'Invalid credentials' });
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: 'Invalid credentials' });
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-    res.json({ token });
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-router.get('/me', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).select('-password');
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-// Update profile (details or avatar)
-router.put('/me', upload.single('reflectionPhoto'), async (req, res) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ msg: 'No token provided' });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    // Update details if present
-    if (req.body.name) user.name = req.body.name;
-    if (req.body.mood) user.mood = req.body.mood;
-    if (req.body.emotionalNeeds) {
-      // Accept either array or comma-separated string
-      if (Array.isArray(req.body.emotionalNeeds)) {
-        user.emotionalNeeds = req.body.emotionalNeeds;
-      } else if (typeof req.body.emotionalNeeds === 'string') {
-        try {
-          // Try to parse JSON array
-          user.emotionalNeeds = JSON.parse(req.body.emotionalNeeds);
-        } catch {
-          // Fallback: split by comma
-          user.emotionalNeeds = req.body.emotionalNeeds.split(',').map(s => s.trim());
-        }
-      }
-    }
-
-    // Update avatar if file uploaded
-    if (req.file) {
-      user.avatar = `/uploads/${req.file.filename}`;
-    }
-
-    await user.save();
-    res.json(user);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-router.post('/onboard', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-    const { personality, mood, emotionalNeeds } = req.body;
-    user.personality = { ...user.personality, ...personality };
-    user.mood = mood;
-    user.emotionalNeeds = emotionalNeeds;
-    await user.save();
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-router.post('/submissions', [auth, upload.fields([{ name: 'photo' }, { name: 'audio' }])], async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-    const { text } = req.body;
-    if (text) user.reflections.text = text;
-    if (req.files['photo']) user.reflections.photo = `/uploads/${req.files['photo'][0].filename}`;
-    if (req.files['audio']) user.reflections.audio = `/uploads/${req.files['audio'][0].filename}`;
-    await user.save();
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-router.post('/redeem/:rewardId', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ msg: 'User not found' });
-    const rewardId = req.params.rewardId;
-    if (user.rewards.includes(rewardId)) return res.status(400).json({ msg: 'Reward already redeemed' });
-    if (rewardId === 'Profile Boost' && user.sparkPoints >= 50) {
-      user.rewards.push(rewardId);
-      user.sparkPoints -= 50;
-    } else if (rewardId === 'Exclusive Prompt' && user.sparkPoints >= 100) {
-      user.rewards.push(rewardId);
-      user.sparkPoints -= 100;
-    } else {
-      return res.status(400).json({ msg: 'Insufficient spark points' });
-    }
-    await user.save();
-    res.json({ sparkPoints: user.sparkPoints, rewards: user.rewards });
-  } catch (err) {
-    res.status(500).json({ msg: 'Server error' });
-  }
-});
-
-module.exports = router;
+export default Register;

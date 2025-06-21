@@ -5,23 +5,26 @@ const backendUrl = process.env.REACT_APP_API_URL;
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
       const res = await axios.post(`${backendUrl}/api/auth/login`, formData);
       localStorage.setItem('token', res.data.token);
       window.location.href = '/profile';
     } catch (err) {
-      console.error(err.response?.data?.msg || 'Login failed');
+      setError(err.response?.data?.msg || 'Login failed');
     }
   };
 
   return (
     <div className="container mx-auto p-6 bg-cosmic-gray/80 rounded-lg shadow-xl text-white">
       <h2 className="text-3xl font-bold mb-4 text-cosmic-blue">Login</h2>
+      {error && <div className="text-red-400 mb-2">{error}</div>}
       <form onSubmit={handleSubmit}>
         <input
           name="email"
