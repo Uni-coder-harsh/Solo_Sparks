@@ -15,8 +15,8 @@ const app = express();
 app.use(express.json());
 app.use(cors({
   origin: [
-    'http://localhost:3000', // for local development
-    'https://solo-sparks-xkwc.onrender.com' // your deployed frontend
+    'http://localhost:3000',
+    'https://solo-sparks-xkwc.onrender.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -54,7 +54,6 @@ app.get('/ping', (req, res) => {
 
 app.get('/mongo-test', async (req, res) => {
   try {
-    // Try a simple MongoDB command
     await mongoose.connection.db.admin().ping();
     res.send('MongoDB connection: OK');
   } catch (err) {
