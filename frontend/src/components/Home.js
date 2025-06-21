@@ -37,7 +37,7 @@ const Home = () => {
           <div className="flex flex-col items-center gap-4">
             <Link to="/profile" className="btn-celestial">View Your Profile</Link>
             <Link to="/quests" className="btn-celestial">Complete a Quest</Link>
-            <Link to="/rewards-list" className="btn-celestial">Claim Rewards</Link>
+            <Link to="/rewards-store" className="btn-celestial">Claim Rewards</Link>
             <Link to="/analytics" className="btn-celestial">See Real-Time Trends</Link>
           </div>
           <div className="mt-8 text-nebula-white text-center max-w-xl">
