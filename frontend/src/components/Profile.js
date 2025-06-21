@@ -47,7 +47,7 @@ const Profile = () => {
         }
       });
       setUser(res.data);
-      setAvatarPreview(res.data.avatar || '/default-avatar.png');
+      setAvatarPreview(res.data.avatar || '/default-avatar.png'); // Use backend URL
       setError('');
     } catch (err) {
       setError(err.response?.data?.msg || 'Failed to upload avatar');
@@ -85,10 +85,10 @@ const Profile = () => {
       <div className="relative mb-4">
         <img
           src={
-            avatarPreview
-              ? avatarPreview.startsWith('/uploads/')
-                ? backendUrl + avatarPreview
-                : avatarPreview
+            user.avatar
+              ? user.avatar.startsWith('/uploads/')
+                ? backendUrl + user.avatar
+                : user.avatar
               : '/default-avatar.png'
           }
           alt="Avatar"
