@@ -50,5 +50,16 @@ app.get('/ping', (req, res) => {
   res.send('pong');
 });
 
+app.get('/mongo-test', async (req, res) => {
+  try {
+    // Try a simple MongoDB command
+    await mongoose.connection.db.admin().ping();
+    res.send('MongoDB connection: OK');
+  } catch (err) {
+    console.error('MongoDB test error:', err);
+    res.status(500).send('MongoDB connection: ERROR');
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
