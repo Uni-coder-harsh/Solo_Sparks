@@ -12,7 +12,7 @@ function validatePassword(password) {
   return regex.test(password);
 }
 
-// Middleware to authenticate user
+// Auth middleware
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ msg: 'No token, authorization denied.' });
@@ -75,7 +75,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// GET current user
+// Get current user
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
@@ -86,7 +86,7 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
-// PUT update profile (with optional avatar upload)
+// Update profile (with avatar upload)
 router.put('/me', authMiddleware, upload.single('reflectionPhoto'), async (req, res) => {
   try {
     const update = {
