@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   sparkPoints: { type: Number, default: 0, min: 0 },
-  mood: { type: String, enum: ['Romantic', 'Dreamy', 'Hopeful', 'Neutral', 'Sad', 'Stressed'], default: 'Neutral' },
+  mood: { type: String, default: 'Neutral' },
   personality: {
     loveType: { type: String, default: '' },
     openness: { type: Number, min: 0, max: 1, default: 0.5 },

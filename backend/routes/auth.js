@@ -6,7 +6,6 @@ const User = require('../models/User');
 
 // Password validation helper
 function validatePassword(password) {
-  // At least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return regex.test(password);
 }
@@ -39,7 +38,7 @@ router.post('/register', async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
     res.json({ token });
   } catch (err) {
-    console.error('Register error:', err);
+    console.error('Register error:', err, req.body);
     res.status(500).json({ msg: 'Server error. Please try again later.' });
   }
 });
@@ -56,12 +55,12 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
     res.json({ token });
   } catch (err) {
-    console.error('Login error:', err);
+    console.error('Login error:', err, req.body);
     res.status(500).json({ msg: 'Server error. Please try again later.' });
   }
 });
 
-// Example protected route (optional)
+// Get current user
 router.get('/me', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
