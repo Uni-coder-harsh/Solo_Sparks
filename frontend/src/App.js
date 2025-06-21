@@ -35,7 +35,7 @@ function App() {
             <Route path="/quest-display" element={<QuestDisplay />} />
             <Route path="/submit" element={<SubmissionPortal />} />
             <Route path="/spark" element={<SparkDashboard />} />
-            <Route path="/rewards" element={<RewardsStore />} />
+            <Route path="/rewards-store" element={<RewardsStore />} />
             <Route path="/rewards-list" element={<Rewards />} />
             <Route path="/progress" element={<ProgressTracker />} />
             <Route path="/mood" element={<MoodInput />} />
