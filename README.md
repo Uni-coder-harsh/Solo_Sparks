@@ -4,6 +4,8 @@ Solo_Sparks is a cosmic dating and self-growth platform where users embark on pe
 
 ---
 
+## Test 
+Demo is available . [Click here](https://solo-sparks-xkwc.onrender.com) to see the demo . 
 ## 🚀 Features
 
 - **User Authentication:** Register, login, and manage your profile (with avatar upload).
